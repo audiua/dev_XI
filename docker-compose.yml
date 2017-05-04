@@ -1,0 +1,69 @@
+version: '2'
+services:
+    web:
+        restart: always
+        image: python3_django1.8.local
+        build:
+            context: './sources/.'
+        command: 'python3 manage.py runserver 0.0.0.0:8000'
+        env_file: '.env'
+        volumes:
+           - ./sources/:/code/
+        ports:
+           - "8000:8000"
+        depends_on:
+#           - redis
+           - postgres
+#    celery_worker:
+#        restart: always
+#        container_name: 'celery_worker'
+#        image: 'python3_django1.8.local'
+#        env_file: '.env'
+#        command: 'python3 -m celery -A _project_ worker -l debug'
+#        volumes_from:
+#          - web
+#        depends_on:
+#          - web
+#    celery_beat:
+#        restart: always
+#        container_name: 'celery_beat'
+#        image: 'python3_django1.8.local'
+#        env_file: '.env'
+#        command: 'python3 -m celery -A _project_ beat --pidfile= -l debug'
+#        volumes_from:
+#          - web
+#        depends_on:
+#          - web
+#    redis:
+#        restart: always
+#        container_name: 'redis'
+#        image: 'redis:3.2.0'
+#        env_file: '.env'
+#        ports:
+#          - '127.0.0.1:6379:6379'
+#        volumes:
+#          - 'voting_redis:/data'
+    postgres:
+        restart: always
+        container_name: 'postgres'
+        image: 'postgres:9.4.11'
+        env_file: '.env'
+        ports:
+          - '127.0.0.1:5432:5432'
+        volumes:
+          - 'voting_postgres:/var/lib/postgresql/data/'
+    pgadmin4:
+        restart: always
+        container_name: 'pgadmin4'
+        image: chorss/docker-pgadmin4
+        depends_on:
+           - postgres
+        ports:
+           - "5050:5050"
+        volumes:
+           - 'voting_pgadmin:/data'
+
+volumes:
+    voting_postgres:
+    voting_pgadmin:
+#    voting_redis:
