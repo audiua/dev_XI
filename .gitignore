@@ -18,3 +18,6 @@ celerybeat-schedule
 
 # исключаем данные
 /sources/db.sqlite3
+/.env
+/sources/voting_files/*
+!/sources/voting_files/.gitkeep
