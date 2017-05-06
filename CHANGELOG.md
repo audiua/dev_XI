@@ -6,6 +6,9 @@
 + add rest docs(swagger)
 + redis cache
 
+### v0.3.1 (06/05/2017)
++ fix voting_pdf_dir
+
 ### v0.3 (06/05/2017)
 + add the field "law_file_name" in table "law"
 + add migrations
