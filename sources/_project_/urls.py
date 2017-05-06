@@ -15,8 +15,24 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
+from rest_framework import routers
+from rest_framework_swagger.views import get_swagger_view
+from voting import views
+
+router = routers.DefaultRouter()
+router.register(r'counsils', views.CounsilViewSet)
+router.register(r'counsil-sessions', views.CounsilSessionViewSet)
+router.register(r'deputies', views.DeputyViewSet)
+router.register(r'laws', views.LawViewSet)
+router.register(r'law-votings', views.LawVotingViewSet)
+
+
+
+schema_view = get_swagger_view(title='Voting API')
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^', include('voting.urls'))
+    url(r'^api/(?P<version>(v1|v2))/', include(router.urls)),
+    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    url(r'^$', schema_view)
 ]
