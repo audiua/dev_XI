@@ -1,6 +1,7 @@
 import os
 import glob
 import datetime
+import logging
 from natsort import natsorted
 from bs4 import BeautifulSoup
 import re
@@ -8,6 +9,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from voting.models import CounsilSession, Counsil, Deputy, Law, LawVoting
 
+logger = logging.getLogger('voting_app')
 
 class Command(BaseCommand):
 
@@ -16,20 +18,17 @@ class Command(BaseCommand):
     Комманда парсить сессии которых нет в базе
     """
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.counsil = None
         self.counsil_session = None
         self.not_parse_page = []
-        super(Command, self).__init__()
-
-    def add_arguments(self, parser):
-        """Аргумент где искать файлы, относительно корня проекта"""
-        parser.add_argument('in')
+        super(Command, self).__init__(*args, **kwargs)
 
     def handle(self, *args, **options):
-        path_in = os.path.join(settings.BASE_DIR, options['in'])
+        path_in = os.path.join(settings.BASE_DIR, settings.VOTING_PDF_DIR)
 
         if not os.stat(path_in):
+            logger.error("dir {} does not exist".format(path_in))
             self.stdout.write(self.style.ERROR("dir {} does not exist".format(path_in)))
             return
 
@@ -52,12 +51,18 @@ class Command(BaseCommand):
             self.stdout.write(self.style.NOTICE("All sessions are parsed"))
             return
 
+        # парсим все новые файлы
         for new_session_dir in new_session_dirs:
 
-            self.stdout.write(self.style.NOTICE("Start with dir '{}'".format(new_session_dir)))
+            # clear dump objects for each session
+            self.counsil = None
+            self.counsil_session = None
+            self.not_parse_page = []
+
+            self.stdout.write("Start with dir '{}'".format(new_session_dir))
             # todo create task for workers
             for law in natsorted(glob.glob("{}/*-*.html".format(os.path.join(settings.BASE_DIR,
-                                                                             options['in'],
+                                                                             settings.VOTING_PDF_DIR,
                                                                              new_session_dir)))):
                 if law in self.not_parse_page:
                     continue
@@ -90,8 +95,10 @@ class Command(BaseCommand):
                                                                               .format(new_session_dir))
 
                 # создаем или получаем закон в сессии
+                law_file_path_part = law.split('/')
+                law_dir_file_path = os.path.join(law_file_path_part[-2], law_file_path_part[-1])
                 if not session_law:
-                    session_law = self.get_or_create_law(law_page_data)
+                    session_law = self.get_or_create_law(law_page_data, law_dir_file_path)
 
                 # создаем депутатов для совета если их нет
                 for deputy in law_page_data['deputy_name_voting']:
@@ -135,13 +142,18 @@ class Command(BaseCommand):
                     page['law_text'] += line.text
                 try:
                     page['voting_number'] = soup.find_all('div', {'class': 'fc1'})[-1].find_next_sibling("div", {"class": 'fc0'}).find_next_sibling("div").text
-                except:
+                except AttributeError as e:
                     page['voting_number'] = soup.find_all('div', {'class': 'fc1'})[-1].parent.find_next_sibling("div", {"class": 'fc0'}).find_next_sibling("div").text
+                except:
+                    logger.exception("ошибка получаения page['voting_number'] {}".format(law_html_file))
 
-                pattern = re.compile(r'(?u)([А-ЯІЄ]{1}[а-яєїі]+)\s([А-ЯІЄ]{1}[а-яєїі]+)\s([А-ЯІЄ]{1}[а-яєїі]+).*?(За|Відсутній|Не голосував|Проти|Утрималися|Не голосував)')
-                pattern_deputy_couple_line = re.compile(r'(?u)([А-ЯІЄ]{1}[а-яєїі]+)\s([А-ЯІЄ]{1}[а-яєїі]+)\s(?:</.*?>)([А-ЯІЄ]{1}[а-яєїі]+).*?(За|Відсутній|Не голосував|Проти|Утрималися|Не голосував)')
+                # сначала проверить на совпадение а потом применять ---
+                pattern = re.compile(r'(?u)([А-ЯІЄ]{1}[а-яєїі]+)\s([А-ЯІЄ]{1}[а-яєїі]+)\s([А-ЯІЄ]{1}[а-яєїі]+).*?(За|Відсутній|Не голосував|Проти|Утримався|Утрималися|Не голосував)')
+                pattern_deputy_couple_line = re.compile(r'(?u)([А-ЯІЄ]{1}[а-яєїі]+)\s([А-ЯІЄ]{1}[а-яєїі]+)\s(?:</.*?>)([А-ЯІЄ]{1}[а-яєїі]+).*?(За|Відсутній|Не голосував|Проти|Утримався|Утрималися|Не голосував)')
+
                 page['deputy_name_voting'] = re.findall(pattern, data.decode('utf-8'))
                 page['deputy_name_voting'] += (re.findall(pattern_deputy_couple_line, data.decode('utf-8')))
+
                 page['voting_result_for'] = soup.find('div', {'class': 'fc2'}).text
                 page['voting_result_against'] = soup.find('div', {'class': 'fc3'}).text
                 page['voting_result_contrary'] = soup.find('div', {'class': 'fc4'}).text
@@ -150,10 +162,8 @@ class Command(BaseCommand):
                 page['voting_resolution'] = soup.find('div', {'class': 'ff4'}).text
                 page['sinle_page'] = bool(page['voting_resolution'])
             except AttributeError as e:
-                # exc_type, exc_value, exc_traceback = sys.exc_info()
-                # print(traceback.print_tb(exc_traceback))
-                # print(e)
-                #TODO loging error
+                # законы которые состоят из двух страниц
+                logger.exception('ошибка получаения page {}'.format(law_html_file))
                 page['sinle_page'] = False
 
         return page
@@ -211,24 +221,25 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("created a deputy - {}".format(deputy.name)))
         return deputy
 
-    def get_or_create_law(self, law_page):
+    def get_or_create_law(self, law_page, law_file):
         """Создание или получение закона"""
         voting_result ="{}, {}, {}, {}".format(law_page['voting_result_for'],
                                            law_page['voting_result_against'],
                                            law_page['voting_result_abstained'],
                                            law_page['voting_result_missing'])
-        law, created = Law.objects.get_or_create(text=law_page['law_text'], session = self.counsil_session,
+        law, created = Law.objects.get_or_create(text=law_page['law_text'], session = self.counsil_session, law_file_name=law_file,
                                                  defaults={
                                                            'resolution': law_page['voting_resolution'],
                                                            'voting_result': voting_result,
                                                            'voting_number': law_page['voting_number']})
         if created:
-            self.stdout.write(self.style.SUCCESS("created a session law - {}".format(law.text)))
+            self.stdout.write(self.style.SUCCESS('created a session law - {}, stored in file "{}"'.format(law.text.strip(), law.law_file_name)))
         return law
 
 
     def create_law_name_voting(self, data):
         """Создание голосования депутата"""
+        self.stdout.write(self.style.SUCCESS("created a deputy voting - {}={}, for file {}".format(data['deputy'], data['vote'], data['law'].law_file_name)))
         LawVoting.objects.create(deputy=data['deputy'], law=data['law'], vote=data['vote'])
 
 

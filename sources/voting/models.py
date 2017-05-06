@@ -28,12 +28,14 @@ class Law(DateTimeModel):
     """
     Модель законопроекта
     Каждый законопроект относится к сессии
+    В сессии могут повторятся законы, для идентификации добавляем html файл(страницу в пдф файле)
     """
     session = models.ForeignKey(CounsilSession, related_name='laws')
     text = models.TextField()
     voting_result = models.CharField(max_length=255)
     resolution = models.CharField(max_length=255)
     voting_number = models.CharField(max_length=255)
+    law_file_name = models.CharField(max_length=255, blank=True, null=True)
 
 class Deputy(DateTimeModel):
     """

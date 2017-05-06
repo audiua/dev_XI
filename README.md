@@ -12,7 +12,9 @@ git clone https://gitnub.com
 DEBUG=true
 SECRET_KEY=0r^4chmbzsum32i(g-v$pc=7x942-22pde2^+))bv&pyo
 STATIC_ROOT=/static
-VOTING_PDF_DIR=/voting_files # по умолчанию /voting_files
+STATIC_URL=/static/
+TIME_ZONE=Europe/Kiev
+VOTING_PDF_DIR=voting_files
 DATABASE=postgres
 DB_NAME=postgres
 DB_USER=postgres

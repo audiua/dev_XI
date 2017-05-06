@@ -11,10 +11,11 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+VAR_DIR = os.path.join(BASE_DIR, 'var')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -83,7 +84,7 @@ if DATABASE == 'sqlite3':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(DATA_DIR, 'db.sqlite3'),
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         }
     }
 elif DATABASE == 'postgres':
@@ -100,7 +101,13 @@ elif DATABASE == 'postgres':
 else:
     raise RuntimeError('Bad django configuration. Invalid DATABASE type')
 
-
+# if 'test' in sys.argv:
+#     DATABASES = {
+#         'default': {
+#             'ENGINE': 'django.db.backends.sqlite3',
+#             'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#         }
+#     }
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
@@ -126,7 +133,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = os.environ.get('TIME_ZONE', 'UTC')
 
 USE_I18N = True
 
@@ -134,15 +141,51 @@ USE_L10N = True
 
 USE_TZ = True
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse'
+        }
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'voting_app.log'),
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'voting_app': {
+            'handlers': ['file'],
+            'filter': ['require_debug_false'],
+            ''
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    }
+}
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = os.environ.get('STATIC_URL', '/static/')
+STATIC_ROOT = os.environ.get('STATIC_ROOT', '/static')
 
-VOTING_PDF_DIR = '/voting_files'
+VOTING_PDF_DIR = os.environ.get('VOTING_PDF_DIR', '/voting_files')
 
-
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 # Celery
 # BROKER_TRANSPORT = 'redis'
 # CELERY_BROKER_TRANSPORT = BROKER_URL = 'redis://{}:6379/0'.format(REDIS_HOST)
