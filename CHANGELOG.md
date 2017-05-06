@@ -1,3 +1,11 @@
+### v0.4
++ add stop words in law parser
++ add django-rest
++ add model serializers
++ implement rest-api for models (read only)
++ add rest docs(swagger)
++ redis cache
+
 ### v0.3 (06/05/2017)
 + add the field "law_file_name" in table "law"
 + add migrations
