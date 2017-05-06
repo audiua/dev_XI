@@ -6,6 +6,7 @@
 + remove option "in" from commands parse_law and pdf2html.  
 + add settings param VOTING_PDF_DIR for commands
 + add django-nose
++ add logging
 
 ### v0.2 (05/05/2017)
 + start voting app
