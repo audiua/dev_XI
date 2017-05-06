@@ -21,3 +21,4 @@ celerybeat-schedule
 /.env
 /sources/voting_files/*
 !/sources/voting_files/.gitkeep
+/sources/var/

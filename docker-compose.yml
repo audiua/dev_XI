@@ -12,7 +12,7 @@ services:
         ports:
            - "8000:8000"
         depends_on:
-#           - redis
+           - redis
            - postgres
 #    celery_worker:
 #        restart: always
@@ -34,15 +34,15 @@ services:
 #          - web
 #        depends_on:
 #          - web
-#    redis:
-#        restart: always
-#        container_name: 'redis'
-#        image: 'redis:3.2.0'
-#        env_file: '.env'
-#        ports:
-#          - '127.0.0.1:6379:6379'
-#        volumes:
-#          - 'voting_redis:/data'
+    redis:
+        restart: always
+        container_name: 'redis'
+        image: 'redis:3.2.0'
+        env_file: '.env'
+        ports:
+          - '127.0.0.1:6379:6379'
+        volumes:
+          - 'voting_redis:/data'
     postgres:
         restart: always
         container_name: 'postgres'
@@ -66,4 +66,4 @@ services:
 volumes:
     voting_postgres:
     voting_pgadmin:
-#    voting_redis:
+    voting_redis:
