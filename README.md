@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/audiua/dev_XI.svg?branch=master)](https://travis-ci.org/audiua/dev_XI)
+
 ### Установка
 + склонировать репозиторий
 ```commandline
