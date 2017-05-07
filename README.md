@@ -1,7 +1,7 @@
 ### Установка
 + склонировать репозиторий
 ```commandline
-git clone https://gitnub.com
+https://github.com/audiua/dev_XI
 ```
 
 ##### настройка переменных окружения
