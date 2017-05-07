@@ -1,2 +1,0 @@
-Requirement already satisfied: freeze in ./env/lib/python3.5/site-packages
-Requirement already satisfied: six in ./env/lib/python3.5/site-packages (from freeze)
