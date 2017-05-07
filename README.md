@@ -41,7 +41,7 @@ docker-compose run --rm web python3 manage.py migrate
 ```
 + создаем админ юзера:
 ```commandline
-docker-compose run --rm web python3 manage.py loaddata data.json
+docker-compose run --rm web python3 manage.py loaddata admin.json
 ```
 1. Создается admin:qwerty123 для доступа в [админ часть проекта](http://127.0.0.1:8000/admin/)  
 PS. Этот шаг можно пропустить и создать юзера самому
